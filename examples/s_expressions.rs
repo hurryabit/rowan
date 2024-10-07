@@ -14,27 +14,40 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(non_camel_case_types)]
 #[repr(u16)]
-enum SyntaxKind {
+enum TokenKind {
     L_PAREN = 0, // '('
     R_PAREN,     // ')'
     WORD,        // '+', '15'
     WHITESPACE,  // whitespaces is explicit
-    ERROR,       // as well as errors
+    UNKNOWN,     // as well as errors
+}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[allow(non_camel_case_types)]
+#[repr(u16)]
+enum NodeKind {
     // composite nodes
+    ERROR,
     LIST, // `(+ 2 3)`
     ATOM, // `+`, `15`, wraps a WORD token
     ROOT, // top-level node: a list of s-expressions
 }
-use SyntaxKind::*;
+use NodeKind::*;
+use TokenKind::*;
 
 /// Some boilerplate is needed, as rowan settled on using its own
 /// `struct SyntaxKind(u16)` internally, instead of accepting the
 /// user's `enum SyntaxKind` as a type parameter.
 ///
 /// First, to easily pass the enum variants into rowan via `.into()`:
-impl From<SyntaxKind> for rowan::SyntaxKind {
-    fn from(kind: SyntaxKind) -> Self {
+impl From<TokenKind> for rowan::SyntaxKind {
+    fn from(kind: TokenKind) -> Self {
+        Self(kind as u16)
+    }
+}
+
+impl From<NodeKind> for rowan::SyntaxKind {
+    fn from(kind: NodeKind) -> Self {
         Self(kind as u16)
     }
 }
@@ -45,12 +58,20 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Lang {}
 impl rowan::Language for Lang {
-    type Kind = SyntaxKind;
-    fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= ROOT as u16);
-        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
+    type NodeKind = NodeKind;
+    type TokenKind = TokenKind;
+    fn node_kind_from_raw(raw: rowan::SyntaxKind) -> Self::NodeKind {
+        assert!(raw.0 <= NodeKind::ROOT as u16);
+        unsafe { std::mem::transmute::<u16, NodeKind>(raw.0) }
     }
-    fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
+    fn node_kind_to_raw(kind: Self::NodeKind) -> rowan::SyntaxKind {
+        kind.into()
+    }
+    fn token_kind_from_raw(raw: rowan::SyntaxKind) -> Self::TokenKind {
+        assert!(raw.0 <= UNKNOWN as u16);
+        unsafe { std::mem::transmute::<u16, TokenKind>(raw.0) }
+    }
+    fn token_kind_to_raw(kind: Self::TokenKind) -> rowan::SyntaxKind {
         kind.into()
     }
 }
@@ -80,7 +101,7 @@ fn parse(text: &str) -> Parse {
     struct Parser {
         /// input tokens, including whitespace,
         /// in *reverse* order.
-        tokens: Vec<(SyntaxKind, String)>,
+        tokens: Vec<(TokenKind, String)>,
         /// the in-progress tree.
         builder: GreenNodeBuilder<'static>,
         /// the list of syntax errors we've accumulated
@@ -161,7 +182,7 @@ fn parse(text: &str) -> Parse {
                     self.bump();
                     self.builder.finish_node();
                 }
-                ERROR => self.bump(),
+                UNKNOWN => self.bump(),
                 _ => unreachable!(),
             }
             SexpRes::Ok
@@ -172,7 +193,7 @@ fn parse(text: &str) -> Parse {
             self.builder.token(kind.into(), text.as_str());
         }
         /// Peek at the first unprocessed token
-        fn current(&self) -> Option<SyntaxKind> {
+        fn current(&self) -> Option<TokenKind> {
             self.tokens.last().map(|(kind, _)| *kind)
         }
         fn skip_ws(&mut self) {
@@ -387,23 +408,23 @@ nan
 
 /// Split the input string into a flat list of tokens
 /// (such as L_PAREN, WORD, and WHITESPACE)
-fn lex(text: &str) -> Vec<(SyntaxKind, String)> {
-    fn tok(t: SyntaxKind) -> m_lexer::TokenKind {
+fn lex(text: &str) -> Vec<(TokenKind, String)> {
+    fn tok(t: TokenKind) -> m_lexer::TokenKind {
         m_lexer::TokenKind(rowan::SyntaxKind::from(t).0)
     }
-    fn kind(t: m_lexer::TokenKind) -> SyntaxKind {
+    fn kind(t: m_lexer::TokenKind) -> TokenKind {
         match t.0 {
             0 => L_PAREN,
             1 => R_PAREN,
             2 => WORD,
             3 => WHITESPACE,
-            4 => ERROR,
+            4 => UNKNOWN,
             _ => unreachable!(),
         }
     }
 
     let lexer = m_lexer::LexerBuilder::new()
-        .error_token(tok(ERROR))
+        .error_token(tok(UNKNOWN))
         .tokens(&[
             (tok(L_PAREN), r"\("),
             (tok(R_PAREN), r"\)"),

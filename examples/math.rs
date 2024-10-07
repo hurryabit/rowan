@@ -19,7 +19,7 @@ use std::iter::Peekable;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(non_camel_case_types)]
 #[repr(u16)]
-enum SyntaxKind {
+enum TokenKind {
     WHITESPACE = 0,
 
     ADD,
@@ -28,14 +28,28 @@ enum SyntaxKind {
     DIV,
 
     NUMBER,
+    UNKNOWN,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[allow(non_camel_case_types)]
+#[repr(u16)]
+enum NodeKind {
     ERROR,
     OPERATION,
     ROOT,
 }
-use SyntaxKind::*;
+use NodeKind::*;
+use TokenKind::*;
 
-impl From<SyntaxKind> for rowan::SyntaxKind {
-    fn from(kind: SyntaxKind) -> Self {
+impl From<NodeKind> for rowan::SyntaxKind {
+    fn from(kind: NodeKind) -> Self {
+        Self(kind as u16)
+    }
+}
+
+impl From<TokenKind> for rowan::SyntaxKind {
+    fn from(kind: TokenKind) -> Self {
         Self(kind as u16)
     }
 }
@@ -43,12 +57,20 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Lang {}
 impl rowan::Language for Lang {
-    type Kind = SyntaxKind;
-    fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= ROOT as u16);
-        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
+    type NodeKind = NodeKind;
+    type TokenKind = TokenKind;
+    fn node_kind_from_raw(raw: rowan::SyntaxKind) -> Self::NodeKind {
+        assert!(raw.0 <= NodeKind::ROOT as u16);
+        unsafe { std::mem::transmute::<u16, NodeKind>(raw.0) }
     }
-    fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
+    fn node_kind_to_raw(kind: Self::NodeKind) -> rowan::SyntaxKind {
+        kind.into()
+    }
+    fn token_kind_from_raw(raw: rowan::SyntaxKind) -> Self::TokenKind {
+        assert!(raw.0 <= TokenKind::UNKNOWN as u16);
+        unsafe { std::mem::transmute::<u16, TokenKind>(raw.0) }
+    }
+    fn token_kind_to_raw(kind: Self::TokenKind) -> rowan::SyntaxKind {
         kind.into()
     }
 }
@@ -59,12 +81,12 @@ type SyntaxToken = rowan::SyntaxToken<Lang>;
 #[allow(unused)]
 type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
 
-struct Parser<I: Iterator<Item = (SyntaxKind, String)>> {
+struct Parser<I: Iterator<Item = (TokenKind, String)>> {
     builder: GreenNodeBuilder<'static>,
     iter: Peekable<I>,
 }
-impl<I: Iterator<Item = (SyntaxKind, String)>> Parser<I> {
-    fn peek(&mut self) -> Option<SyntaxKind> {
+impl<I: Iterator<Item = (TokenKind, String)>> Parser<I> {
+    fn peek(&mut self) -> Option<TokenKind> {
         while self.iter.peek().map(|&(t, _)| t == WHITESPACE).unwrap_or(false) {
             self.bump();
         }
@@ -85,7 +107,7 @@ impl<I: Iterator<Item = (SyntaxKind, String)>> Parser<I> {
             }
         }
     }
-    fn handle_operation(&mut self, tokens: &[SyntaxKind], next: fn(&mut Self)) {
+    fn handle_operation(&mut self, tokens: &[TokenKind], next: fn(&mut Self)) {
         let checkpoint = self.builder.checkpoint();
         next(self);
         while self.peek().map(|t| tokens.contains(&t)).unwrap_or(false) {
@@ -111,17 +133,16 @@ impl<I: Iterator<Item = (SyntaxKind, String)>> Parser<I> {
 }
 
 fn print(indent: usize, element: SyntaxElement) {
-    let kind: SyntaxKind = element.kind();
     print!("{:indent$}", "", indent = indent);
     match element {
         NodeOrToken::Node(node) => {
-            println!("- {:?}", kind);
+            println!("- {:?}", node.kind());
             for child in node.children_with_tokens() {
                 print(indent + 2, child);
             }
         }
 
-        NodeOrToken::Token(token) => println!("- {:?} {:?}", token.text(), kind),
+        NodeOrToken::Token(token) => println!("- {:?} {:?}", token.text(), token.kind()),
     }
 }
 

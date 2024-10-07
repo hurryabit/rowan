@@ -29,7 +29,7 @@ use crate::{Language, SyntaxNode, SyntaxNodeChildren, TextRange};
 pub trait AstNode {
     type Language: Language;
 
-    fn can_cast(kind: <Self::Language as Language>::Kind) -> bool
+    fn can_cast(kind: <Self::Language as Language>::NodeKind) -> bool
     where
         Self: Sized;
 
@@ -62,7 +62,7 @@ pub trait AstNode {
 /// the pointed node's source location to change, invalidating the pointer.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SyntaxNodePtr<L: Language> {
-    kind: L::Kind,
+    kind: L::NodeKind,
     range: TextRange,
 }
 
@@ -113,7 +113,7 @@ impl<L: Language> SyntaxNodePtr<L> {
     }
 
     /// Returns the kind of the syntax node this points to.
-    pub fn kind(&self) -> L::Kind {
+    pub fn kind(&self) -> L::NodeKind {
         self.kind
     }
 
@@ -231,7 +231,10 @@ pub mod support {
         AstChildren::new(parent)
     }
 
-    pub fn token<L: Language>(parent: &SyntaxNode<L>, kind: L::Kind) -> Option<SyntaxToken<L>> {
+    pub fn token<L: Language>(
+        parent: &SyntaxNode<L>,
+        kind: L::TokenKind,
+    ) -> Option<SyntaxToken<L>> {
         parent.children_with_tokens().filter_map(|it| it.into_token()).find(|it| it.kind() == kind)
     }
 }
@@ -245,13 +248,22 @@ mod tests {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct TestLanguage;
     impl Language for TestLanguage {
-        type Kind = SyntaxKind;
+        type NodeKind = SyntaxKind;
+        type TokenKind = SyntaxKind;
 
-        fn kind_from_raw(raw: SyntaxKind) -> Self::Kind {
+        fn node_kind_from_raw(raw: SyntaxKind) -> Self::NodeKind {
             raw
         }
 
-        fn kind_to_raw(kind: Self::Kind) -> SyntaxKind {
+        fn node_kind_to_raw(kind: Self::NodeKind) -> SyntaxKind {
+            kind
+        }
+
+        fn token_kind_from_raw(raw: SyntaxKind) -> Self::TokenKind {
+            raw
+        }
+
+        fn token_kind_to_raw(kind: Self::TokenKind) -> SyntaxKind {
             kind
         }
     }

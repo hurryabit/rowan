@@ -6,10 +6,13 @@ use crate::{
 };
 
 pub trait Language: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash {
-    type Kind: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash;
+    type NodeKind: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash;
+    type TokenKind: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash;
 
-    fn kind_from_raw(raw: SyntaxKind) -> Self::Kind;
-    fn kind_to_raw(kind: Self::Kind) -> SyntaxKind;
+    fn node_kind_from_raw(raw: SyntaxKind) -> Self::NodeKind;
+    fn node_kind_to_raw(kind: Self::NodeKind) -> SyntaxKind;
+    fn token_kind_from_raw(raw: SyntaxKind) -> Self::TokenKind;
+    fn token_kind_to_raw(kind: Self::TokenKind) -> SyntaxKind;
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -109,8 +112,8 @@ impl<L: Language> SyntaxNode<L> {
         self.raw.replace_with(replacement)
     }
 
-    pub fn kind(&self) -> L::Kind {
-        L::kind_from_raw(self.raw.kind())
+    pub fn kind(&self) -> L::NodeKind {
+        L::node_kind_from_raw(self.raw.kind())
     }
 
     pub fn text_range(&self) -> TextRange {
@@ -270,8 +273,8 @@ impl<L: Language> SyntaxToken<L> {
         self.raw.replace_with(new_token)
     }
 
-    pub fn kind(&self) -> L::Kind {
-        L::kind_from_raw(self.raw.kind())
+    pub fn kind(&self) -> L::TokenKind {
+        L::token_kind_from_raw(self.raw.kind())
     }
 
     pub fn text_range(&self) -> TextRange {
@@ -348,10 +351,10 @@ impl<L: Language> SyntaxElement<L> {
         }
     }
 
-    pub fn kind(&self) -> L::Kind {
+    pub fn kind(&self) -> NodeOrToken<L::NodeKind, L::TokenKind> {
         match self {
-            NodeOrToken::Node(it) => it.kind(),
-            NodeOrToken::Token(it) => it.kind(),
+            NodeOrToken::Node(it) => NodeOrToken::Node(it.kind()),
+            NodeOrToken::Token(it) => NodeOrToken::Token(it.kind()),
         }
     }
 
