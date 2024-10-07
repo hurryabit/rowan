@@ -36,42 +36,43 @@ use NodeKind::*;
 use TokenKind::*;
 
 /// Some boilerplate is needed, as rowan settled on using its own
-/// `struct SyntaxKind(u16)` internally, instead of accepting the
-/// user's `enum SyntaxKind` as a type parameter.
+/// `struct TokenKind(u16)` internally, instead of accepting the
+/// user's `enum TokenKind` as a type parameter.
 ///
 /// First, to easily pass the enum variants into rowan via `.into()`:
-impl From<TokenKind> for rowan::SyntaxKind {
+impl From<TokenKind> for rowan::TokenKind {
     fn from(kind: TokenKind) -> Self {
         Self(kind as u16)
     }
 }
 
-impl From<NodeKind> for rowan::SyntaxKind {
+/// Similarly for `enum NodeKind`.
+impl From<NodeKind> for rowan::NodeKind {
     fn from(kind: NodeKind) -> Self {
         Self(kind as u16)
     }
 }
 
 /// Second, implementing the `Language` trait teaches rowan to convert between
-/// these two SyntaxKind types, allowing for a nicer SyntaxNode API where
-/// "kinds" are values from our `enum SyntaxKind`, instead of plain u16 values.
+/// these two NodeKind and TokenKind types, allowing for a nicer SyntaxNode API where
+/// "kinds" are values from our `enum NodeKind`, instead of plain u16 values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Lang {}
 impl rowan::Language for Lang {
     type NodeKind = NodeKind;
     type TokenKind = TokenKind;
-    fn node_kind_from_raw(raw: rowan::SyntaxKind) -> Self::NodeKind {
+    fn node_kind_from_raw(raw: rowan::NodeKind) -> Self::NodeKind {
         assert!(raw.0 <= NodeKind::ROOT as u16);
         unsafe { std::mem::transmute::<u16, NodeKind>(raw.0) }
     }
-    fn node_kind_to_raw(kind: Self::NodeKind) -> rowan::SyntaxKind {
+    fn node_kind_to_raw(kind: Self::NodeKind) -> rowan::NodeKind {
         kind.into()
     }
-    fn token_kind_from_raw(raw: rowan::SyntaxKind) -> Self::TokenKind {
+    fn token_kind_from_raw(raw: rowan::TokenKind) -> Self::TokenKind {
         assert!(raw.0 <= UNKNOWN as u16);
         unsafe { std::mem::transmute::<u16, TokenKind>(raw.0) }
     }
-    fn token_kind_to_raw(kind: Self::TokenKind) -> rowan::SyntaxKind {
+    fn token_kind_to_raw(kind: Self::TokenKind) -> rowan::TokenKind {
         kind.into()
     }
 }
@@ -410,7 +411,7 @@ nan
 /// (such as L_PAREN, WORD, and WHITESPACE)
 fn lex(text: &str) -> Vec<(TokenKind, String)> {
     fn tok(t: TokenKind) -> m_lexer::TokenKind {
-        m_lexer::TokenKind(rowan::SyntaxKind::from(t).0)
+        m_lexer::TokenKind(rowan::TokenKind::from(t).0)
     }
     fn kind(t: m_lexer::TokenKind) -> TokenKind {
         match t.0 {

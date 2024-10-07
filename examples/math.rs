@@ -42,13 +42,13 @@ enum NodeKind {
 use NodeKind::*;
 use TokenKind::*;
 
-impl From<NodeKind> for rowan::SyntaxKind {
+impl From<NodeKind> for rowan::NodeKind {
     fn from(kind: NodeKind) -> Self {
         Self(kind as u16)
     }
 }
 
-impl From<TokenKind> for rowan::SyntaxKind {
+impl From<TokenKind> for rowan::TokenKind {
     fn from(kind: TokenKind) -> Self {
         Self(kind as u16)
     }
@@ -59,18 +59,18 @@ enum Lang {}
 impl rowan::Language for Lang {
     type NodeKind = NodeKind;
     type TokenKind = TokenKind;
-    fn node_kind_from_raw(raw: rowan::SyntaxKind) -> Self::NodeKind {
+    fn node_kind_from_raw(raw: rowan::NodeKind) -> Self::NodeKind {
         assert!(raw.0 <= NodeKind::ROOT as u16);
         unsafe { std::mem::transmute::<u16, NodeKind>(raw.0) }
     }
-    fn node_kind_to_raw(kind: Self::NodeKind) -> rowan::SyntaxKind {
+    fn node_kind_to_raw(kind: Self::NodeKind) -> rowan::NodeKind {
         kind.into()
     }
-    fn token_kind_from_raw(raw: rowan::SyntaxKind) -> Self::TokenKind {
+    fn token_kind_from_raw(raw: rowan::TokenKind) -> Self::TokenKind {
         assert!(raw.0 <= TokenKind::UNKNOWN as u16);
         unsafe { std::mem::transmute::<u16, TokenKind>(raw.0) }
     }
-    fn token_kind_to_raw(kind: Self::TokenKind) -> rowan::SyntaxKind {
+    fn token_kind_to_raw(kind: Self::TokenKind) -> rowan::TokenKind {
         kind.into()
     }
 }

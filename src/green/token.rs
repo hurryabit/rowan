@@ -9,13 +9,13 @@ use countme::Count;
 
 use crate::{
     arc::{Arc, HeaderSlice, ThinArc},
-    green::SyntaxKind,
+    green::TokenKind,
     TextSize,
 };
 
 #[derive(PartialEq, Eq, Hash)]
 struct GreenTokenHead {
-    kind: SyntaxKind,
+    kind: TokenKind,
     _c: Count<GreenToken>,
 }
 
@@ -89,7 +89,7 @@ impl fmt::Display for GreenTokenData {
 impl GreenTokenData {
     /// Kind of this Token.
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
+    pub fn kind(&self) -> TokenKind {
         self.data.header.kind
     }
 
@@ -109,7 +109,7 @@ impl GreenTokenData {
 impl GreenToken {
     /// Creates new Token.
     #[inline]
-    pub fn new(kind: SyntaxKind, text: &str) -> GreenToken {
+    pub fn new(kind: TokenKind, text: &str) -> GreenToken {
         let head = GreenTokenHead { kind, _c: Count::new() };
         let ptr = ThinArc::from_header_and_iter(head, text.bytes());
         GreenToken { ptr }

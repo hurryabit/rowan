@@ -95,7 +95,7 @@ use std::{
 use countme::Count;
 
 use crate::{
-    green::{GreenChild, GreenElementRef, GreenNodeData, GreenTokenData, SyntaxKind},
+    green::{GreenChild, GreenElementRef, GreenNodeData, GreenTokenData, NodeKind, TokenKind},
     sll,
     utility_types::Delta,
     Direction, GreenNode, GreenToken, NodeOrToken, SyntaxText, TextRange, TextSize, TokenAtOffset,
@@ -370,11 +370,6 @@ impl NodeData {
         TextRange::at(offset, len)
     }
 
-    #[inline]
-    fn kind(&self) -> SyntaxKind {
-        self.green().kind()
-    }
-
     fn next_sibling(&self) -> Option<SyntaxNode> {
         let mut siblings = self.green_siblings().enumerate();
         let index = self.index() as usize;
@@ -578,8 +573,8 @@ impl SyntaxNode {
     }
 
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
-        self.data().kind()
+    pub fn kind(&self) -> NodeKind {
+        self.green_ref().kind()
     }
 
     #[inline]
@@ -863,8 +858,8 @@ impl SyntaxToken {
     }
 
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
-        self.data().kind()
+    pub fn kind(&self) -> TokenKind {
+        self.green().kind()
     }
 
     #[inline]
@@ -985,10 +980,10 @@ impl SyntaxElement {
     }
 
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
+    pub fn kind(&self) -> NodeOrToken<NodeKind, TokenKind> {
         match self {
-            NodeOrToken::Node(it) => it.kind(),
-            NodeOrToken::Token(it) => it.kind(),
+            NodeOrToken::Node(it) => NodeOrToken::Node(it.kind()),
+            NodeOrToken::Token(it) => NodeOrToken::Token(it.kind()),
         }
     }
 

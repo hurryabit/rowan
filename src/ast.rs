@@ -241,29 +241,29 @@ pub mod support {
 
 #[cfg(test)]
 mod tests {
-    use crate::{GreenNodeBuilder, Language, SyntaxKind, SyntaxNode};
+    use crate::{GreenNodeBuilder, Language, NodeKind, SyntaxNode, TokenKind};
 
     use super::SyntaxNodePtr;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct TestLanguage;
     impl Language for TestLanguage {
-        type NodeKind = SyntaxKind;
-        type TokenKind = SyntaxKind;
+        type NodeKind = NodeKind;
+        type TokenKind = TokenKind;
 
-        fn node_kind_from_raw(raw: SyntaxKind) -> Self::NodeKind {
+        fn node_kind_from_raw(raw: NodeKind) -> Self::NodeKind {
             raw
         }
 
-        fn node_kind_to_raw(kind: Self::NodeKind) -> SyntaxKind {
+        fn node_kind_to_raw(kind: Self::NodeKind) -> NodeKind {
             kind
         }
 
-        fn token_kind_from_raw(raw: SyntaxKind) -> Self::TokenKind {
+        fn token_kind_from_raw(raw: TokenKind) -> Self::TokenKind {
             raw
         }
 
-        fn token_kind_to_raw(kind: Self::TokenKind) -> SyntaxKind {
+        fn token_kind_to_raw(kind: Self::TokenKind) -> TokenKind {
             kind
         }
     }
@@ -271,7 +271,7 @@ mod tests {
     fn build_immut_tree() -> SyntaxNode<TestLanguage> {
         // Creates a single-node tree
         let mut builder = GreenNodeBuilder::new();
-        builder.start_node(SyntaxKind(0));
+        builder.start_node(NodeKind(0));
         builder.finish_node();
 
         SyntaxNode::<TestLanguage>::new_root(builder.finish())

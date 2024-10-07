@@ -1,18 +1,18 @@
 use std::{borrow::Cow, fmt, iter, marker::PhantomData, ops::Range};
 
 use crate::{
-    cursor, green::GreenTokenData, Direction, GreenNode, GreenNodeData, GreenToken, NodeOrToken,
-    SyntaxKind, SyntaxText, TextRange, TextSize, TokenAtOffset, WalkEvent,
+    cursor, green::GreenTokenData, Direction, GreenNode, GreenNodeData, GreenToken, NodeKind,
+    NodeOrToken, SyntaxText, TextRange, TextSize, TokenAtOffset, TokenKind, WalkEvent,
 };
 
 pub trait Language: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash {
     type NodeKind: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash;
     type TokenKind: Sized + Copy + fmt::Debug + Eq + Ord + std::hash::Hash;
 
-    fn node_kind_from_raw(raw: SyntaxKind) -> Self::NodeKind;
-    fn node_kind_to_raw(kind: Self::NodeKind) -> SyntaxKind;
-    fn token_kind_from_raw(raw: SyntaxKind) -> Self::TokenKind;
-    fn token_kind_to_raw(kind: Self::TokenKind) -> SyntaxKind;
+    fn node_kind_from_raw(raw: NodeKind) -> Self::NodeKind;
+    fn node_kind_to_raw(kind: Self::NodeKind) -> NodeKind;
+    fn token_kind_from_raw(raw: TokenKind) -> Self::TokenKind;
+    fn token_kind_to_raw(kind: Self::TokenKind) -> TokenKind;
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]

@@ -3,8 +3,8 @@ use rustc_hash::FxHasher;
 use std::hash::{BuildHasherDefault, Hash, Hasher};
 
 use crate::{
-    green::GreenElementRef, GreenNode, GreenNodeData, GreenToken, GreenTokenData, NodeOrToken,
-    SyntaxKind,
+    green::GreenElementRef, GreenNode, GreenNodeData, GreenToken, GreenTokenData, NodeKind,
+    NodeOrToken, TokenKind,
 };
 
 use super::element::GreenElement;
@@ -69,7 +69,7 @@ fn element_id(elem: GreenElementRef<'_>) -> *const () {
 impl NodeCache {
     pub(crate) fn node(
         &mut self,
-        kind: SyntaxKind,
+        kind: NodeKind,
         children: &mut Vec<(u64, GreenElement)>,
         first_child: usize,
     ) -> (u64, GreenNode) {
@@ -130,7 +130,7 @@ impl NodeCache {
         (hash, node)
     }
 
-    pub(crate) fn token(&mut self, kind: SyntaxKind, text: &str) -> (u64, GreenToken) {
+    pub(crate) fn token(&mut self, kind: TokenKind, text: &str) -> (u64, GreenToken) {
         let hash = {
             let mut h = FxHasher::default();
             kind.hash(&mut h);

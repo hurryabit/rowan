@@ -266,15 +266,18 @@ mod private {
 
 #[cfg(test)]
 mod tests {
-    use crate::{green::SyntaxKind, GreenNodeBuilder};
+    use crate::{
+        green::{NodeKind, TokenKind},
+        GreenNodeBuilder,
+    };
 
     use super::*;
 
     fn build_tree(chunks: &[&str]) -> SyntaxNode {
         let mut builder = GreenNodeBuilder::new();
-        builder.start_node(SyntaxKind(62));
+        builder.start_node(NodeKind(62));
         for &chunk in chunks.iter() {
-            builder.token(SyntaxKind(92), chunk.into())
+            builder.token(TokenKind(92), chunk.into())
         }
         builder.finish_node();
         SyntaxNode::new_root(builder.finish())

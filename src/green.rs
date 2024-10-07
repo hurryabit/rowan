@@ -15,9 +15,13 @@ pub use self::{
     token::{GreenToken, GreenTokenData},
 };
 
-/// SyntaxKind is a type tag for each token or node.
+/// TokenKind is a type tag for each token.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SyntaxKind(pub u16);
+pub struct TokenKind(pub u16);
+
+/// NodeKind is a type tag for each node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct NodeKind(pub u16);
 
 #[cfg(test)]
 mod tests {

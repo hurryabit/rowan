@@ -10,14 +10,14 @@ use countme::Count;
 
 use crate::{
     arc::{Arc, HeaderSlice, ThinArc},
-    green::{GreenElement, GreenElementRef, SyntaxKind},
+    green::{GreenElement, GreenElementRef, NodeKind},
     utility_types::static_assert,
     GreenToken, NodeOrToken, TextRange, TextSize,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(super) struct GreenNodeHead {
-    kind: SyntaxKind,
+    kind: NodeKind,
     text_len: TextSize,
     _c: Count<GreenNode>,
 }
@@ -122,7 +122,7 @@ impl GreenNodeData {
 
     /// Kind of this node.
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
+    pub fn kind(&self) -> NodeKind {
         self.header().kind
     }
 
@@ -203,7 +203,7 @@ impl ops::Deref for GreenNode {
 impl GreenNode {
     /// Creates new Node.
     #[inline]
-    pub fn new<I>(kind: SyntaxKind, children: I) -> GreenNode
+    pub fn new<I>(kind: NodeKind, children: I) -> GreenNode
     where
         I: IntoIterator<Item = GreenElement>,
         I::IntoIter: ExactSizeIterator,

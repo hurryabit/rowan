@@ -2,7 +2,7 @@ use std::num::NonZeroUsize;
 
 use crate::{
     cow_mut::CowMut,
-    green::{node_cache::NodeCache, GreenElement, GreenNode, SyntaxKind},
+    green::{node_cache::NodeCache, GreenElement, GreenNode, NodeKind, TokenKind},
     NodeOrToken,
 };
 
@@ -24,7 +24,7 @@ impl Checkpoint {
 #[derive(Default, Debug)]
 pub struct GreenNodeBuilder<'cache> {
     cache: CowMut<'cache, NodeCache>,
-    parents: Vec<(SyntaxKind, usize)>,
+    parents: Vec<(NodeKind, usize)>,
     children: Vec<(u64, GreenElement)>,
 }
 
@@ -46,14 +46,14 @@ impl GreenNodeBuilder<'_> {
 
     /// Adds new token to the current branch.
     #[inline]
-    pub fn token(&mut self, kind: SyntaxKind, text: &str) {
+    pub fn token(&mut self, kind: TokenKind, text: &str) {
         let (hash, token) = self.cache.token(kind, text);
         self.children.push((hash, token.into()));
     }
 
     /// Start new node and make it current.
     #[inline]
-    pub fn start_node(&mut self, kind: SyntaxKind) {
+    pub fn start_node(&mut self, kind: NodeKind) {
         let len = self.children.len();
         self.parents.push((kind, len));
     }
@@ -73,12 +73,12 @@ impl GreenNodeBuilder<'_> {
     /// `start_node_at`.
     /// Example:
     /// ```rust
-    /// # use rowan::{GreenNodeBuilder, SyntaxKind};
-    /// # const PLUS: SyntaxKind = SyntaxKind(0);
-    /// # const OPERATION: SyntaxKind = SyntaxKind(1);
+    /// # use rowan::{GreenNodeBuilder, NodeKind, TokenKind};
+    /// # const PLUS: TokenKind = TokenKind(0);
+    /// # const OPERATION: NodeKind = NodeKind(1);
     /// # struct Parser;
     /// # impl Parser {
-    /// #     fn peek(&self) -> Option<SyntaxKind> { None }
+    /// #     fn peek(&self) -> Option<TokenKind> { None }
     /// #     fn parse_expr(&mut self) {}
     /// # }
     /// # let mut builder = GreenNodeBuilder::new();
@@ -100,7 +100,7 @@ impl GreenNodeBuilder<'_> {
     /// Wrap the previous branch marked by `checkpoint` in a new branch and
     /// make it current.
     #[inline]
-    pub fn start_node_at(&mut self, checkpoint: Checkpoint, kind: SyntaxKind) {
+    pub fn start_node_at(&mut self, checkpoint: Checkpoint, kind: NodeKind) {
         let checkpoint = checkpoint.into_inner();
         assert!(
             checkpoint <= self.children.len(),

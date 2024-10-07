@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::{
-    green::{GreenNode, GreenToken, SyntaxKind},
+    green::{GreenNode, GreenToken, NodeKind, TokenKind},
     GreenNodeData, NodeOrToken, TextSize,
 };
 
@@ -57,7 +57,7 @@ impl GreenElementRef<'_> {
 impl GreenElement {
     /// Returns kind of this element.
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
+    pub fn kind(&self) -> NodeOrToken<NodeKind, TokenKind> {
         self.as_deref().kind()
     }
 
@@ -71,10 +71,10 @@ impl GreenElement {
 impl GreenElementRef<'_> {
     /// Returns kind of this element.
     #[inline]
-    pub fn kind(&self) -> SyntaxKind {
+    pub fn kind(&self) -> NodeOrToken<NodeKind, TokenKind> {
         match self {
-            NodeOrToken::Node(it) => it.kind(),
-            NodeOrToken::Token(it) => it.kind(),
+            NodeOrToken::Node(it) => NodeOrToken::Node(it.kind()),
+            NodeOrToken::Token(it) => NodeOrToken::Token(it.kind()),
         }
     }
 
